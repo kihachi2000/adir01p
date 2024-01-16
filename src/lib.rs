@@ -1,13 +1,13 @@
 use rusb::{DeviceHandle, GlobalContext};
 use std::time::Duration;
 
-pub fn send_adir01p(source: &str) -> rusb::Result<()> {
+pub fn send(source: &str) -> Result<(), String> {
     let vid: u16 = 0x22ea;
     let pid: u16 = 0x003a;
     let handle = rusb::open_device_with_vid_pid(vid, pid).expect("adir01p is not found");
 
     let code = encode(source);
-    set_code(&handle, code).and_then(|_| send_req(&handle))
+    set_code(&handle, code).and_then(|_| send_req(&handle)).map_err(|e| e.to_string())
 }
 
 fn encode(source: &str) -> Vec<u8> {
@@ -77,4 +77,3 @@ fn send_req(handle: &DeviceHandle<GlobalContext>) -> rusb::Result<()> {
         .write_interrupt(0x04, &buf, Duration::from_millis(5000))
         .map(|_| ())
 }
-
