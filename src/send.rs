@@ -4,7 +4,9 @@ use std::time::Duration;
 
 pub fn send(source: &str) -> Result<()> {
     let code = encode(source)?;
-    let handle = get_handle()?;
+    let mut handle = get_handle()?;
+
+    prepare(&mut handle)?;
     set_code(&handle, code).and_then(|_| send_req(&handle))?;
 
     Ok(())
@@ -57,7 +59,24 @@ fn get_handle() -> Result<DeviceHandle<GlobalContext>> {
         })
         .ok_or(Error::NotFound)?;
 
-    device.open().map_err(|e| from_rusb_error(e))
+    let handle = device.open().map_err(|e| from_rusb_error(e))?;
+
+    Ok(handle)
+}
+
+fn prepare(handle: &mut DeviceHandle<GlobalContext>) -> Result<()> {
+    let kernel_driver_active = handle
+        .kernel_driver_active(3)
+        .map_err(|e| from_rusb_error(e))?;
+
+    if kernel_driver_active {
+        handle
+            .detach_kernel_driver(3)
+            .map_err(|e| from_rusb_error(e))?;
+    }
+
+    handle.claim_interface(3).map_err(|e| from_rusb_error(e))?;
+    Ok(())
 }
 
 fn set_code(handle: &DeviceHandle<GlobalContext>, code: Vec<u8>) -> Result<()> {
