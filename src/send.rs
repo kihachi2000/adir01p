@@ -23,16 +23,15 @@ fn encode(source: &str) -> Result<Vec<u8>> {
 
     let code: Vec<u8> = parsed
         .into_iter()
-        .map(|digit| !digit)
         .flat_map(|digit| {
             (0..4).rev().flat_map(move |index| {
                 let bit = (digit >> index) & 1;
                 if bit == 1 {
                     // on
-                    [0x00, 0x11, 0x00, 0x11]
+                    [0x00, 0x11, 0x00, 0x33]
                 } else {
                     // off
-                    [0x00, 0x11, 0x00, 0x33]
+                    [0x00, 0x11, 0x00, 0x11]
                 }
             })
         })
